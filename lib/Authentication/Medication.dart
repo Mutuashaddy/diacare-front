@@ -130,7 +130,7 @@ class _MedicationPageState extends State<MedicationPage> {
 
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.group), label: "Community"),
+          BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "reminders"),
           BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],

@@ -38,11 +38,14 @@ dependencies:
   http: ^1.6.0
   intl: ^0.19.0
   url_launcher: ^6.2.5
+  shared_preferences: ^2.5.3
+
 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: "^0.13.1"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -50,6 +53,11 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+flutter_launcher_icons:
+  android: true # Set to true to generate icons for Android
+  ios: true     # Set to true to generate icons for iOS
+  # REPLACE 'assets/icon/my_app_icon.png' with the actual path to your 512x512 PNG file
+  image_path: "images/diacare.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

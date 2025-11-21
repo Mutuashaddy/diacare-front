@@ -130,25 +130,27 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 10),
 
-            // BOTTOM NAVIGATION BAR
-            Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 6),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  navItem(Icons.home, "Home"),
-                  navItem(Icons.group, "Community"),
-                  navItem(Icons.emergency, "Emergency"),
-                  navItem(Icons.person, "Profile", isActive: true),
-                ],
-              ),
-            )
+             // --------------------------- BOTTOM NAV ---------------------------
+     BottomNavigationBar(
+      currentIndex: 3,
+      selectedItemColor: const Color(0xFF1A7B7D),
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
+
+      onTap: (index) {
+        if (index == 0) Navigator.pushNamed(context, "/home");
+         if (index == 1) Navigator.pushNamed(context, "/reminders");
+        if (index == 2) Navigator.pushNamed(context, "/emergency");
+        if (index == 3) {} // Already on Profile
+      },
+
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+         BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminder"),
+        BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+      ],
+    ),
           ],
         ),
       ),

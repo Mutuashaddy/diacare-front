@@ -1,16 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class EmergencyPage extends StatelessWidget {
+class EmergencyPage extends StatefulWidget {
   const EmergencyPage({super.key});
 
-  // Method to make calls
+  @override
+  State<EmergencyPage> createState() => _EmergencyPageState();
+}
+
+class _EmergencyPageState extends State<EmergencyPage> {
+  bool isEditing = false;
+
+  // Text controllers
+  TextEditingController caregiverName = TextEditingController();
+  TextEditingController caregiverNumber = TextEditingController();
+
+  TextEditingController doctorName = TextEditingController();
+  TextEditingController doctorNumber = TextEditingController();
+
+  TextEditingController hospitalName = TextEditingController();
+  TextEditingController hospitalNumber = TextEditingController();
+  TextEditingController hospitalLocation = TextEditingController();
+
+  // Call Method
   Future<void> callNumber(String number) async {
     final Uri uri = Uri(scheme: 'tel', path: number);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
-    } else {
-      throw 'Could not launch $number';
     }
   }
 
@@ -31,77 +47,102 @@ class EmergencyPage extends StatelessWidget {
             color: Colors.black,
           ),
         ),
+
+        actions: [
+          IconButton(
+            icon: Icon(isEditing ? Icons.check : Icons.edit, color: Colors.black),
+            onPressed: () {
+              setState(() => isEditing = !isEditing);
+            },
+          )
+        ],
       ),
 
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Caregiver
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: const Icon(Icons.person, color: Colors.teal, size: 30),
-                title: const Text("Caregiver"),
-                subtitle: const Text("0723456789"),
-                trailing: IconButton(
-                  icon: const Icon(Icons.call, color: Colors.green, size: 30),
-                  onPressed: () => callNumber("0723456789"),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
 
-            // Doctor
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: const Icon(Icons.local_hospital, color: Colors.red, size: 30),
-                title: const Text("Doctor"),
-                subtitle: const Text("0799123456"),
-                trailing: IconButton(
-                  icon: const Icon(Icons.call, color: Colors.green, size: 30),
-                  onPressed: () => callNumber("0799123456"),
-                ),
+              // CAREGIVER
+              buildCard(
+                icon: Icons.person,
+                title: "Caregiver",
+                nameController: caregiverName,
+                numberController: caregiverNumber,
               ),
-            ),
-            const SizedBox(height: 12),
 
-            // Hospital Number
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: const Icon(Icons.phone_in_talk, color: Colors.blue, size: 30),
-                title: const Text("Hospital Number"),
-                subtitle: const Text("0744001122"),
-                trailing: IconButton(
-                  icon: const Icon(Icons.call, color: Colors.green, size: 30),
-                  onPressed: () => callNumber("0744001122"),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 15),
 
-            // Hospital Name + Location
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: const Icon(Icons.location_on, color: Colors.deepPurple, size: 30),
-                title: const Text("Hospital Name"),
-                subtitle: const Text("Nairobi West Hospital"),
-                trailing: IconButton(
-                  icon: const Icon(Icons.map, color: Colors.teal, size: 30),
-                  onPressed: () {
-                    launchUrl(
-                      Uri.parse("https://maps.google.com/?q=Nairobi+West+Hospital"),
-                      mode: LaunchMode.externalApplication,
-                    );
-                  },
+              // DOCTOR
+              buildCard(
+                icon: Icons.local_hospital,
+                title: "Doctor",
+                nameController: doctorName,
+                numberController: doctorNumber,
+              ),
+
+              const SizedBox(height: 15),
+
+              // HOSPITAL NUMBER
+              buildCard(
+                icon: Icons.phone_in_talk,
+                title: "Hospital Number",
+                nameController: hospitalName,
+                numberController: hospitalNumber,
+              ),
+
+              const SizedBox(height: 15),
+
+              // name HOSPITAL LOCATION
+              Card(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  leading: const Icon(Icons.local_hospital, color: Colors.teal, size: 30),
+                  title: TextField(
+                    controller: hospitalName,
+                    enabled: isEditing,
+                    decoration: const InputDecoration(
+                      labelText: "Hospital Name",
+                      border: InputBorder.none,
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.map, color: Colors.teal, size: 30),
+                    onPressed: () {
+                      if (hospitalLocation.text.isNotEmpty) {
+                        launchUrl(
+                          Uri.parse(hospitalName.text),
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 30),
+
+              // SAVE BUTTON
+              Visibility(
+                visible: isEditing,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal[700],
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () {
+                      setState(() => isEditing = false);
+                    },
+                    child: const Text("Save", style: TextStyle(color: Colors.white, fontSize: 18)),
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
       ),
 
@@ -109,14 +150,60 @@ class EmergencyPage extends StatelessWidget {
         backgroundColor: Colors.white,
         selectedItemColor: Colors.teal[800],
         unselectedItemColor: Colors.grey,
-
-        currentIndex: 2, // Emergency active
+        currentIndex: 2,
 
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.group), label: "Community"),
+          BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "reminders"),
           BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
+      ),
+    );
+  }
+
+  // Reusable card builder
+  Widget buildCard({
+    required IconData icon,
+    required String title,
+    required TextEditingController nameController,
+    required TextEditingController numberController,
+  }) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(icon, color: Colors.teal, size: 30),
+            title: TextField(
+              controller: nameController,
+              enabled: isEditing,
+              decoration: InputDecoration(
+                labelText: "$title Name",
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.call, color: Colors.green, size: 28),
+            title: TextField(
+              controller: numberController,
+              enabled: isEditing,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: "$title Number",
+                border: InputBorder.none,
+              ),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.phone, color: Colors.green, size: 30),
+              onPressed: () {
+                if (!isEditing && numberController.text.isNotEmpty) {
+                  callNumber(numberController.text);
+                }
+              },
+            ),
+          ),
         ],
       ),
     );

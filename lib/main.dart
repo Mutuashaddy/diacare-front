@@ -11,6 +11,7 @@ import 'package:diacare/Authentication/BloodSugar.dart';
 import 'package:diacare/Authentication/Profile.dart';
 import 'package:diacare/Authentication/Medication.dart ';
 import 'package:diacare/Authentication/Emergency.dart';
+import 'package:diacare/Authentication/Home.dart';
 
 //import 'package:DIACARE/HomePage.dart';
 
@@ -45,7 +46,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         
       ),
-      home:  EmergencyPage(),//MedicationPage(), //ProfilePage() ,//BloodPressurePage(),//PostPage(),
+      home:ProfilePage() ,//PostPage() ,//MedicationPage(),//HomeScreen(),//EmergencyPage(), // BloodSugarPage(),//BioData(), //HomeScreen(), //EmergencyPage(),//MedicationPage(), //ProfilePage() ,//BloodPressurePage(),//PostPage(),
        
       debugShowCheckedModeBanner: false ,
     );

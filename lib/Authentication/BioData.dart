@@ -54,181 +54,184 @@ class _BioDataState extends State<BioData> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE3F4F4),
+ @override
+Widget build(BuildContext context) {
+  int _currentIndex = 3; // Profile active
 
-      appBar: AppBar(
-  backgroundColor: const Color(0xFF1A7B7D),
-  centerTitle: true,
-  title: const Text(
-    "BioData",
-    style: TextStyle(color: Colors.white),
-  ),
-  actions: [
-    IconButton(
-      onPressed: () {
-        // TODO: Add edit mode or navigate to edit screen
-      },
-      icon: const Icon(
-        Icons.edit,
-        color: Colors.white,
+  return Scaffold(
+    backgroundColor: const Color(0xFFE3F4F4),
+
+    appBar: AppBar(
+      backgroundColor: const Color(0xFF1A7B7D),
+      centerTitle: true,
+      title: const Text(
+        "BioData",
+        style: TextStyle(color: Colors.white),
+      ),
+      actions: [
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.edit, color: Colors.white),
+        ),
+      ],
+    ),
+
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          TextField(
+            controller: fullNameController,
+            decoration: InputDecoration(
+              labelText: "Full Name",
+              prefixIcon: const Icon(Icons.person, color: Color(0xFF1A7B7D)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          TextField(
+            controller: dobController,
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: "Date of Birth",
+              prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF1A7B7D)),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.date_range, color: Color(0xFF1A7B7D)),
+                onPressed: () => pickDate(context),
+              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          TextField(
+            controller: ageController,
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: "Age",
+              prefixIcon: const Icon(Icons.timelapse, color: Color(0xFF1A7B7D)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.black45),
+            ),
+            child: DropdownButtonFormField<String>(
+              value: selectedGender,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                icon: Icon(Icons.wc, color: Color(0xFF1A7B7D)),
+                labelText: "Gender",
+              ),
+              items: genderList.map((gender) {
+                return DropdownMenuItem(
+                  value: gender,
+                  child: Text(gender),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => selectedGender = value);
+              },
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.black45),
+            ),
+            child: DropdownButtonFormField<String>(
+              value: selectedDiabetesType,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                icon: Icon(Icons.medical_services, color: Color(0xFF1A7B7D)),
+                labelText: "Diabetes Type",
+              ),
+              items: diabetesTypes.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => selectedDiabetesType = value);
+              },
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          TextField(
+            controller: emergencyContactController,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              labelText: "Emergency Contact",
+              prefixIcon: const Icon(Icons.phone_android, color: Color(0xFF1A7B7D)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          TextField(
+            controller: doctorNumberController,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              labelText: "Doctor’s Number",
+              prefixIcon: const Icon(Icons.local_hospital, color: Color(0xFF1A7B7D)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 30),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A7B7D),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {},
+              child: const Text(
+                "Save BioData",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ),
+        ],
       ),
     ),
-  ],
-),
 
+    // --------------------------- BOTTOM NAV ---------------------------
+    bottomNavigationBar: BottomNavigationBar(
+      currentIndex: _currentIndex,
+      selectedItemColor: const Color(0xFF1A7B7D),
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // FULL NAME
-            TextField(
-              controller: fullNameController,
-              decoration: InputDecoration(
-                labelText: "Full Name",
-                prefixIcon: const Icon(Icons.person, color: Color(0xFF1A7B7D)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 15),
+      onTap: (index) {
+        if (index == 0) Navigator.pushNamed(context, "/home");
+         if (index == 1) Navigator.pushNamed(context, "/reminders");
+        if (index == 2) Navigator.pushNamed(context, "/emergency");
+        if (index == 3) {} // Already on Profile
+      },
 
-            // DOB + Date picker
-            TextField(
-              controller: dobController,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "Date of Birth",
-                prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF1A7B7D)),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.date_range, color: Color(0xFF1A7B7D)),
-                  onPressed: () => pickDate(context),
-                ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            // AGE (calculated)
-            TextField(
-              controller: ageController,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "Age",
-                prefixIcon: const Icon(Icons.timelapse, color: Color(0xFF1A7B7D)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            // GENDER DROPDOWN
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.black45),
-              ),
-              child: DropdownButtonFormField<String>(
-                value: selectedGender,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  icon: Icon(Icons.wc, color: Color(0xFF1A7B7D)),
-                  labelText: "Gender",
-                ),
-                items: genderList.map((gender) {
-                  return DropdownMenuItem(
-                    value: gender,
-                    child: Text(gender),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedGender = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            // DIABETES TYPE DROPDOWN
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.black45),
-              ),
-              child: DropdownButtonFormField<String>(
-                value: selectedDiabetesType,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  icon: Icon(Icons.medical_services, color: Color(0xFF1A7B7D)),
-                  labelText: "Diabetes Type",
-                ),
-                items: diabetesTypes.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(type),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedDiabetesType = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            // EMERGENCY CONTACT
-            TextField(
-              controller: emergencyContactController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: "Emergency Contact",
-                prefixIcon: const Icon(Icons.phone_android, color: Color(0xFF1A7B7D)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            // DOCTOR’S NUMBER
-            TextField(
-              controller: doctorNumberController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: "Doctor’s Number",
-                prefixIcon: const Icon(Icons.local_hospital, color: Color(0xFF1A7B7D)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // SAVE BUTTON
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A7B7D),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () {
-                  // TODO: Connect to backend API
-                },
-                child: const Text(
-                  "Save BioData",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+         BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminder"),
+        BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+      ],
+    ),
+  );
+}
 }
