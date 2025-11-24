@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:diacare/Authentication/Profile.dart';
+import 'package:diacare/Authentication/Emergency.dart';
+import 'package:diacare/Authentication/Home.dart';
+import 'package:diacare/Authentication/Reminder.dart ';
+import 'package:diacare/Authentication/Medication.dart ';
 import 'package:url_launcher/url_launcher.dart';
+
 
 class EmergencyPage extends StatefulWidget {
   const EmergencyPage({super.key});
@@ -94,7 +100,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
 
               const SizedBox(height: 15),
 
-              // name HOSPITAL LOCATION
+              // hospital name
               Card(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
@@ -146,19 +152,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
         ),
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.teal[800],
-        unselectedItemColor: Colors.grey,
-        currentIndex: 2,
-
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "reminders"),
-          BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
-      ),
+  
     );
   }
 

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:diacare/Authentication/Profile.dart';
+import 'package:diacare/Authentication/Emergency.dart';
+import 'package:diacare/Authentication/Home.dart';
+import 'package:diacare/Authentication/Reminder.dart ';
+import 'package:diacare/Authentication/Medication.dart ';
 
 class PostPage extends StatefulWidget {
   const PostPage({super.key});
@@ -24,7 +29,7 @@ class _PostPageState extends State<PostPage> {
   String? selectedTopic;
   final TextEditingController messageController = TextEditingController();
 
-  // List of posts
+  // list to hold posts
   List<Map<String, dynamic>> posts = [];
 
   @override
@@ -63,7 +68,7 @@ class _PostPageState extends State<PostPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // TOPIC
+                        // topic
                         Text(
                           post["topic"],
                           style: const TextStyle(
@@ -74,14 +79,14 @@ class _PostPageState extends State<PostPage> {
                         ),
                         const SizedBox(height: 8),
 
-                        // MESSAGE
+                        // message
                         Text(
                           post["message"],
                           style: const TextStyle(fontSize: 16),
                         ),
                         const SizedBox(height: 12),
 
-                        // LIKE + REPLY BUTTONS
+                        // like and reply buttons
                         Row(
                           children: [
                             IconButton(
@@ -106,7 +111,7 @@ class _PostPageState extends State<PostPage> {
                           ],
                         ),
 
-                        // REPLIES SECTION
+                        // reply section
                         if (post["replies"].isNotEmpty) ...[
                           const Divider(),
                           const Text(
@@ -128,32 +133,12 @@ class _PostPageState extends State<PostPage> {
               },
             
             ),
-     // --------------------------- BOTTOM NAV ---------------------------
-    bottomNavigationBar: BottomNavigationBar(
-      currentIndex: 3,
-      selectedItemColor: const Color(0xFF1A7B7D),
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-
-      onTap: (index) {
-        if (index == 0) Navigator.pushNamed(context, "/home");
-         if (index == 1) Navigator.pushNamed(context, "/reminders");
-        if (index == 2) Navigator.pushNamed(context, "/emergency");
-        if (index == 3) {} // Already on Profile
-      },
-
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-         BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminder"),
-        BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
-    ),
+    
     );
   }
 
   
-  // CREATE POST POPUP
+  // create post popup
   
   void _showCreatePostDialog(BuildContext context) {
     selectedTopic = null;
@@ -167,7 +152,7 @@ class _PostPageState extends State<PostPage> {
           height: 220,
           child: Column(
             children: [
-              // TOPIC DROPDOWN
+              // topic dropdown
               DropdownButtonFormField<String>(
                 value: selectedTopic,
                 decoration: const InputDecoration(
@@ -188,7 +173,7 @@ class _PostPageState extends State<PostPage> {
               ),
               const SizedBox(height: 15),
 
-              // MESSAGE FIELD
+              // message textfield
               TextField(
                 controller: messageController,
                 maxLines: 3,
@@ -230,7 +215,7 @@ class _PostPageState extends State<PostPage> {
   }
 
   
-  // REPLY POPUP
+  //reply popup
   
   void _showReplyDialog(BuildContext context, int postIndex) {
     final replyController = TextEditingController();
@@ -269,3 +254,41 @@ class _PostPageState extends State<PostPage> {
     );
   }
 }
+// //  BOTTOM NAVIGATION BAR 
+//       bottomNavigationBar: BottomNavigationBar(
+//         currentIndex: 3,
+//        selectedItemColor: const Color(0xFF1A7B7D),
+//         unselectedItemColor: Colors.grey,
+//         type: BottomNavigationBarType.fixed,
+
+//         onTap: (index) {
+//           if (index == 0) {
+//             Navigator.pushReplacement(
+//               context,
+//               MaterialPageRoute(builder: (_) => const HomeScreen()),
+//             );
+//           }
+//           if (index == 1) {
+//             Navigator.pushReplacement(
+//               context,
+//               MaterialPageRoute(builder: (_) => const MedicationPage()),
+//             );
+//           }
+//           if (index == 2) {
+//             Navigator.pushReplacement(
+//               context,
+//               MaterialPageRoute(builder: (_) => const EmergencyPage()),
+//             );
+//           }
+//           if (index == 3) {
+//             // Already on profile
+//           }
+//         },
+
+//         items: const [
+//           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+//           BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminder"),
+//           BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
+//           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+//         ],
+//       ),

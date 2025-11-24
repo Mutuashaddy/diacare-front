@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:diacare/Authentication/Profile.dart';
+import 'package:diacare/Authentication/Emergency.dart';
+import 'package:diacare/Authentication/Home.dart';
+import 'package:diacare/Authentication/Reminder.dart ';
+import 'package:diacare/Authentication/Medication.dart ';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,11 +18,10 @@ class _ProfilePageState extends State<ProfilePage> {
   final Color bgColor = const Color(0xFFE3F4F4);
   final Color mainColor = const Color(0xFF1A7B7D);
 
-  // Controllers
-  final fullNameController = TextEditingController(text: "Shadrack Mutua");
-  final dobController = TextEditingController(text: "2001-05-10");
-  final diabetesTypeController = TextEditingController(text: "Type 2");
-  final ageController = TextEditingController(text: "23");
+  // final fullNameController = TextEditingController(text: "Shadrack Mutua");
+  // final dobController = TextEditingController(text: "2001-05-10");
+  // final diabetesTypeController = TextEditingController(text: "Type 2");
+  // final ageController = TextEditingController(text: "23");
 
   @override
   Widget build(BuildContext context) {
@@ -40,11 +44,12 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
 
-      // BODY
       body: SingleChildScrollView(
         child: Center(
           child: Column(
             children: [
+              const SizedBox(height: 10),
+
               // LOGO
               Container(
                 width: 120,
@@ -61,7 +66,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 20),
 
-              // TITLE
               Text(
                 "My Profile",
                 style: TextStyle(
@@ -73,91 +77,62 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 30),
 
-              buildTextField("Full Name", fullNameController),
+              buildTextField("Full Name",TextEditingController() ),
               const SizedBox(height: 20),
 
-              buildTextField("Date of Birth", dobController),
+              buildTextField("Date of Birth" ,TextEditingController()),
               const SizedBox(height: 20),
 
-              buildTextField("Diabetes Type", diabetesTypeController),
+              buildTextField("Diabetes Type" ,TextEditingController()),
               const SizedBox(height: 20),
 
-              buildTextField("Age", ageController),
-              const SizedBox(height: 70),
+              buildTextField("Age" ,TextEditingController()),
+              const SizedBox(height: 40),
+
+              // SAVE AND LOGOUT BUTTONS 
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // SAVE
+                  Padding(
+                    padding: const EdgeInsets.only(left: 20),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: mainColor,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 14, horizontal: 35),
+                      ),
+                      onPressed: () {},
+                      child: const Text("Save", style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+
+                  // LOGOUT
+                  Padding(
+                    padding: const EdgeInsets.only(right: 20),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 14, horizontal: 30),
+                      ),
+                      onPressed: () {},
+                      child: const Text("Logout", style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 30),
             ],
           ),
         ),
       ),
 
-      // SAVE + LOGOUT BUTTONS
-      bottomNavigationBar: SizedBox(
-        height: 140,
-        child: Column(
-          children: [
-            // BUTTON ROW
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // SAVE BUTTON
-                Padding(
-                  padding: const EdgeInsets.only(left: 20),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: mainColor,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 14, horizontal: 35),
-                    ),
-                    onPressed: () {},
-                    child: const Text("Save", style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-
-                // LOGOUT BUTTON
-                Padding(
-                  padding: const EdgeInsets.only(right: 20),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 14, horizontal: 30),
-                    ),
-                    onPressed: () {},
-                    child: const Text("Logout", style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-             // --------------------------- BOTTOM NAV ---------------------------
-     BottomNavigationBar(
-      currentIndex: 3,
-      selectedItemColor: const Color(0xFF1A7B7D),
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-
-      onTap: (index) {
-        if (index == 0) Navigator.pushNamed(context, "/home");
-         if (index == 1) Navigator.pushNamed(context, "/reminders");
-        if (index == 2) Navigator.pushNamed(context, "/emergency");
-        if (index == 3) {} // Already on Profile
-      },
-
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-         BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminder"),
-        BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
-    ),
-          ],
-        ),
-      ),
+     
     );
   }
 
-  // TEXT FIELD WIDGET
   Widget buildTextField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -166,29 +141,11 @@ class _ProfilePageState extends State<ProfilePage> {
         enabled: isEditing,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
-    );
-  }
-
-  // NAV ICON
-  Widget navItem(IconData icon, String label, {bool isActive = false}) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? const Color(0xFF1A7B7D) : Colors.grey,
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: isActive ? const Color(0xFF1A7B7D) : Colors.grey,
-            fontSize: 12,
-          ),
-        )
-      ],
     );
   }
 }

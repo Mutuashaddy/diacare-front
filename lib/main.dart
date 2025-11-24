@@ -46,8 +46,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         
       ),
-      home:ProfilePage() ,//PostPage() ,//MedicationPage(),//HomeScreen(),//EmergencyPage(), // BloodSugarPage(),//BioData(), //HomeScreen(), //EmergencyPage(),//MedicationPage(), //ProfilePage() ,//BloodPressurePage(),//PostPage(),
-       
+      home: Register(),//ProfilePage(), //Splash(),
       debugShowCheckedModeBanner: false ,
     );
   }

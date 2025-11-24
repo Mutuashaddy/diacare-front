@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:diacare/Authentication/Profile.dart';
+import 'package:diacare/Authentication/Emergency.dart';
+import 'package:diacare/Authentication/Home.dart';
+import 'package:diacare/Authentication/Reminder.dart ';
+import 'package:diacare/Authentication/Medication.dart ';
+
 
 class MedicationPage extends StatefulWidget {
   const MedicationPage({super.key});
@@ -31,7 +37,7 @@ class _MedicationPageState extends State<MedicationPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFE3F4F4),
 
-      // Floating add button
+      // floating action button to add medication
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF1A7B7D),
         child: const Icon(Icons.add, size: 30),
@@ -40,7 +46,7 @@ class _MedicationPageState extends State<MedicationPage> {
         },
       ),
 
-      // Logo + Title + Save Button
+      // Logo , title and save button
       appBar: AppBar(
         backgroundColor: const Color(0xFFE3F4F4),
         elevation: 0,
@@ -96,16 +102,16 @@ class _MedicationPageState extends State<MedicationPage> {
               ),
               const SizedBox(height: 15),
 
-              TextField(
-                controller: timeController,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: "Time To Take",
-                  prefixIcon: Icon(Icons.schedule),
-                  border: OutlineInputBorder(),
-                ),
-                onTap: pickTime,
-              ),
+              // TextField(
+              //   controller: timeController,
+              //   readOnly: true,
+              //   decoration: const InputDecoration(
+              //     labelText: "Time To Take",
+              //     prefixIcon: Icon(Icons.schedule),
+              //     border: OutlineInputBorder(),
+              //   ),
+              //   onTap: pickTime,
+              // ),
               const SizedBox(height: 15),
 
               TextField(
@@ -122,24 +128,7 @@ class _MedicationPageState extends State<MedicationPage> {
         ),
       ),
 
-      // Bottom Navigation Bar
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.teal[800],
-        unselectedItemColor: Colors.grey,
-
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "reminders"),
-          BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
-
-        currentIndex: 3, // Active on Profile
-        onTap: (index) {
-          // Navigation logic here
-        },
-      ),
+   
     );
   }
 }

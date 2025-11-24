@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:diacare/Authentication/Profile.dart';
+import 'package:diacare/Authentication/Emergency.dart';
+import 'package:diacare/Authentication/Home.dart';
+import 'package:diacare/Authentication/Reminder.dart ';
+import 'package:diacare/Authentication/Medication.dart ';
+
 
 class BloodSugarPage extends StatefulWidget {
   const BloodSugarPage({super.key});
@@ -146,27 +152,7 @@ class _BloodSugarPageState extends State<BloodSugarPage> {
           ],
         ),
       ),
-     // --------------------------- BOTTOM NAV ---------------------------
-    bottomNavigationBar: BottomNavigationBar(
-      currentIndex: 3,
-      selectedItemColor: const Color(0xFF1A7B7D),
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-
-      onTap: (index) {
-        if (index == 0) Navigator.pushNamed(context, "/home");
-         if (index == 1) Navigator.pushNamed(context, "/reminders");
-        if (index == 2) Navigator.pushNamed(context, "/emergency");
-        if (index == 3) {} // Already on Profile
-      },
-
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-         BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminder"),
-        BottomNavigationBarItem(icon: Icon(Icons.emergency), label: "Emergency"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
-    ),
+   
     );
   }
 }

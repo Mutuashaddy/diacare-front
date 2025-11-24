@@ -16,14 +16,18 @@ class _RegisterState extends State<Register> {
   final dobController = TextEditingController();
   final passController = TextEditingController();
   final confirmPassController = TextEditingController();
+  final baseUrl = "http://10.124.180.254:8000/api/";
+ // Replace with your API base URL
 
   final _formkey = GlobalKey<FormState>();
+   final emailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+
   bool _passwordVisible = false; 
+
 
   DateTime? dob;
 
-  // Your API URL
-  final baseUrl = ""; 
+ 
 
   Future<void> pickDOB() async {
     DateTime? selected = await showDatePicker(
@@ -146,8 +150,12 @@ class _RegisterState extends State<Register> {
 
                 TextFormField(
                   controller: emailController,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter your email' : null,
+                 validator: (value) {
+  if (value!.isEmpty) return "Enter your email";
+  if (!emailRegex.hasMatch(value)) return "Invalid email format";
+  return null;
+},
+
                   decoration: const InputDecoration(
                     labelText: "Email",
                     border: OutlineInputBorder(),

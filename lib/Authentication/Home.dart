@@ -1,141 +1,148 @@
 import 'package:flutter/material.dart';
+import 'package:diacare/Authentication/BloodPressure.dart';
+import 'package:diacare/Authentication/PostPage.dart';
+import 'package:diacare/Authentication/BloodSugar.dart';
+import 'package:diacare/Authentication/Profile.dart';
+import 'package:diacare/Authentication/Medication.dart';
+import 'package:diacare/Authentication/Emergency.dart';
+import 'package:diacare/Authentication/Home.dart';
+import 'package:diacare/Authentication/Reminder.dart';
 
-void main() {
-  runApp(const HealthAppClone());
-}
-
-class HealthAppClone extends StatelessWidget {
-  const HealthAppClone({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'DiaCare Clone',
-      theme: ThemeData(
-        // Set up the dark theme based on the screenshots
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black, // Dark background
-        cardColor: const Color(0xFF1E1E1E), // Slightly lighter dark card background
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.white),
-          titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        fontFamily: 'Roboto', // Use a standard font
-        useMaterial3: true,
-      ),
-      home: const HomeScreen(),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
-    // Determine the size of the screen for responsive design
-    final screenWidth = MediaQuery.of(context).size.width;
+    final List<Widget> pages = [
+      _homePage(context),
+      const MedicationPage(),   // Go to medication page
+      const EmergencyPage(),    // Go to emergency page
+      const ProfilePage(),      // Go to profile page
+    ];
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // --- 1. Top Greeting/Header Section ---
-            _buildHeaderSection(screenWidth),
-            
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // --- 2. Blood Sugar Card ---
-                  _buildHealthCard(
-                    title: 'Blood Sugar',
-                    icon: Icons.upload_file, // Using a generic upload icon for the red symbol
-                    iconColor: Colors.red,
-                    normalRange: '70 - 99 mg/dL or 4.4 - 7.0 mmol/L',
-                    context: context,
-                  ),
-                  
-                  const SizedBox(height: 20),
+      backgroundColor: const Color(0xFFE3F4F4),
+      body: pages[_currentIndex],
 
-                  // --- 3. Blood Pressure Card ---
-                  _buildHealthCard(
-                    title: 'Blood Pressure',
-                    icon: Icons.medical_services_outlined, // Using a generic medical icon for the blue symbol
-                    iconColor: Colors.blue,
-                    normalRange: 'Normal: 90/60 - 120/80 mmHg',
-                    context: context,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // --- 4. Your Meds Card ---
-                  _buildMedsCard(context),
-                  
-                  const SizedBox(height: 100), // Add padding for the bottom navigation area
-                ],
-              ),
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF1A7B7D),
+        unselectedItemColor: Colors.grey,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminders"),
+          BottomNavigationBarItem(icon: Icon(Icons.local_hospital), label: "Emergency"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
       ),
-      // --- 5. Bottom Navigation Bar ---
-      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
-  // --- Widget Builders ---
+  // home page 
+  Widget _homePage(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
 
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildHeaderSection(screenWidth),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildHealthCard(
+                  title: 'Blood Sugar',
+                  icon: Icons.upload_file,
+                  iconColor: Colors.red,
+                  normalRange: '70 - 99 mg/dL or 4.4 - 7.0 mmol/L',
+                  context: context,
+                  onReport: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BloodSugarPage()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                _buildHealthCard(
+                  title: 'Blood Pressure',
+                  icon: Icons.medical_services_outlined,
+                  iconColor: Colors.blue,
+                  normalRange: 'Normal: 90/60 - 120/80 mmHg',
+                  context: context,
+                  onReport: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BloodPressurePage()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                _buildMedsCard(context),
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // HEADER SECTION 
   Widget _buildHeaderSection(double screenWidth) {
     return Container(
       width: screenWidth,
-      padding: EdgeInsets.only(
-        top: MediaQueryData.fromView(WidgetsBinding.instance.window).padding.top + 10,
-        bottom: 20,
-        left: 20,
-        right: 20,
-      ),
-      // Gradient background from the screenshots
+      padding: const EdgeInsets.only(top: 60, bottom: 20, left: 20, right: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFFF007F), Color(0xFF8B00FF)], // Pink/Fuchsia to Violet/Indigo
+          colors: [
+            Color(0xFF1A7B7D),
+            Color(0xFF125E5F),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Text(
             'How are you feeling today?',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w400,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.white),
           ),
           const SizedBox(height: 5),
           const Text(
             "See what's trending today!",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.white70),
           ),
           const SizedBox(height: 15),
+
           ElevatedButton(
             onPressed: () {
-              // Action for Go to Community
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PostPage()),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+              foregroundColor: const Color(0xFF1A7B7D),
               minimumSize: const Size(180, 50),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
-              elevation: 5,
             ),
             child: const Text(
               'Go to Community',
@@ -147,20 +154,21 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  //  health card widget
   Widget _buildHealthCard({
     required String title,
     required IconData icon,
     required Color iconColor,
     required String normalRange,
     required BuildContext context,
+    required VoidCallback onReport,
   }) {
     return Card(
-      elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -168,59 +176,49 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
                 ),
               ],
             ),
-            const Divider(color: Colors.white10, height: 20),
+
+            const Divider(color: Colors.black26),
+
             Center(
-              child: Text(
-                'Normal:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-              ),
+              child: Text('Normal:',
+                  style: TextStyle(color: Colors.grey.shade700)),
             ),
+
             Center(
               child: Text(
                 normalRange,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal,
-                    ),
+                style: const TextStyle(fontSize: 18, color: Colors.black),
               ),
             ),
+
             const SizedBox(height: 15),
+
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey.shade800,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: const Text('View Report'),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A7B7D),
+                      foregroundColor: Colors.white,
                     ),
+                    onPressed: onReport,
+                    child: const Text("View Report"),
                   ),
                 ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey.shade800,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: const Text('View All Logs'),
-                    ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A7B7D),
+                      foregroundColor: Colors.white),
+                    onPressed: () {},
+                    child: const Text("View All Logs"),
                   ),
                 ),
               ],
@@ -231,9 +229,10 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  //  Medscard
   Widget _buildMedsCard(BuildContext context) {
     return Card(
-      elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -241,61 +240,54 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
-                const Icon(Icons.medication_liquid_outlined, color: Colors.blue, size: 24), // Placeholder for blue icon
-                const SizedBox(width: 8),
+              children: const [
+                Icon(Icons.medication_liquid_outlined,
+                    color: Color(0xFF1A7B7D), size: 24),
+                SizedBox(width: 8),
                 Text(
                   'Your Meds',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                  style: TextStyle(fontSize: 20, color: Colors.black, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
-            const Divider(color: Colors.white10, height: 20),
-            
-            // Medication List
-            _buildMedicationRow(
-              name: 'Metformin',
-              details: '- 1 x 2',
-              iconColor: Colors.green, // Green Icon from screenshot
-            ),
-            _buildMedicationRow(
-              name: 'Insulin',
-              details: '- 1 unit',
-              iconColor: Colors.red, // Red Icon from screenshot
-            ),
-            
+
+            const Divider(color: Colors.black26),
+
+            _buildMedicationRow("Metformin", "- 1 x 2", Colors.green),
+            _buildMedicationRow("Insulin", "- 1 unit", Colors.red),
+
             const SizedBox(height: 15),
+
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey.shade800,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: const Text('View Report'),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A7B7D),
+                      foregroundColor: Colors.white,
                     ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MedicationPage()),
+                      );
+                    },
+                    child: const Text("View Report"),
                   ),
                 ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey.shade800,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: const Text('View All Medications'),
-                    ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A7B7D),
+                        foregroundColor: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MedicationPage()),
+                      );
+                    },
+                    child: const Text("View All Medications"),
                   ),
                 ),
               ],
@@ -306,62 +298,18 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMedicationRow({
-    required String name,
-    required String details,
-    required Color iconColor,
-  }) {
+  Widget _buildMedicationRow(String name, String details, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.circle, color: iconColor, size: 10), // Small colored dot/icon
+          Icon(Icons.circle, color: color, size: 10),
           const SizedBox(width: 10),
-          Text(
-            name,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            details,
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
-          ),
+          Text(name, style: const TextStyle(color: Colors.black, fontSize: 18)),
+          const SizedBox(width: 6),
+          Text(details, style: const TextStyle(color: Colors.grey)),
         ],
       ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.black, // Dark background
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.grey,
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.access_time),
-          label: 'reminders',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.local_hospital),
-          label: 'Emergency',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
-      currentIndex: 0,
-      onTap: (index) {
-        // Handle navigation taps
-      },
     );
   }
 }
