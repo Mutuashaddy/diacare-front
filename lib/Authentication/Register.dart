@@ -82,7 +82,7 @@ class _RegisterState extends State<Register> {
         registerUrl,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'name': nameController.text,
+          'full_name': nameController.text,
           'email': emailController.text,
           'dob': dobController.text,
           'password': passController.text,
