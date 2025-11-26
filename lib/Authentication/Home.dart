@@ -7,6 +7,9 @@ import 'package:diacare/Authentication/Medication.dart';
 import 'package:diacare/Authentication/Emergency.dart';
 import 'package:diacare/Authentication/Home.dart';
 import 'package:diacare/Authentication/Reminder.dart';
+import 'package:diacare/Authentication/ViewBloodPressure.dart';
+import 'package:diacare/Authentication/ViewBloodSugar.dart';
+import 'package:diacare/Authentication/ViewMedication.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,15 +25,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       _homePage(context),
-      const MedicationPage(),   // Go to medication page
-      const EmergencyPage(),    // Go to emergency page
-      const ProfilePage(),      // Go to profile page
+      const MedicationPage(),
+      const EmergencyPage(),
+      const ProfilePage(),
     ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFE3F4F4),
       body: pages[_currentIndex],
-
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         selectedItemColor: const Color(0xFF1A7B7D),
@@ -49,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // home page 
+  // HOME PAGE
   Widget _homePage(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -61,9 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
+                // BLOOD SUGAR CARD
                 _buildHealthCard(
                   title: 'Blood Sugar',
-                  icon: Icons.upload_file,
+                  icon: Icons.bloodtype,
                   iconColor: Colors.red,
                   normalRange: '70 - 99 mg/dL or 4.4 - 7.0 mmol/L',
                   context: context,
@@ -73,12 +76,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       MaterialPageRoute(builder: (_) => const BloodSugarPage()),
                     );
                   },
+                  onViewLogs: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BloodSugarPage()),//view page
+                    );
+                  },
                 ),
+
                 const SizedBox(height: 20),
 
+                // BLOOD PRESSURE CARD
                 _buildHealthCard(
                   title: 'Blood Pressure',
-                  icon: Icons.medical_services_outlined,
+                  icon: Icons.monitor_heart,
                   iconColor: Colors.blue,
                   normalRange: 'Normal: 90/60 - 120/80 mmHg',
                   context: context,
@@ -88,7 +99,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       MaterialPageRoute(builder: (_) => const BloodPressurePage()),
                     );
                   },
+                  onViewLogs: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BloodPressurePage()), //view page
+                    );
+                  },
                 ),
+
                 const SizedBox(height: 20),
 
                 _buildMedsCard(context),
@@ -101,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // HEADER SECTION 
+  // HEADER SECTION
   Widget _buildHeaderSection(double screenWidth) {
     return Container(
       width: screenWidth,
@@ -154,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  //  health card widget
+  // HEALTH CARD
   Widget _buildHealthCard({
     required String title,
     required IconData icon,
@@ -162,6 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String normalRange,
     required BuildContext context,
     required VoidCallback onReport,
+    required VoidCallback onViewLogs,
   }) {
     return Card(
       color: Colors.white,
@@ -208,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       foregroundColor: Colors.white,
                     ),
                     onPressed: onReport,
-                    child: const Text("View Report"),
+                    child: const Text("Add"),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -217,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1A7B7D),
                       foregroundColor: Colors.white),
-                    onPressed: () {},
+                    onPressed: onViewLogs,   // FIXED
                     child: const Text("View All Logs"),
                   ),
                 ),
@@ -229,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  //  Medscard
+  // MEDICATION CARD
   Widget _buildMedsCard(BuildContext context) {
     return Card(
       color: Colors.white,
@@ -272,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(builder: (_) => const MedicationPage()),
                       );
                     },
-                    child: const Text("View Report"),
+                    child: const Text("Add"),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -284,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const MedicationPage()),
+                        MaterialPageRoute(builder: (_) => const MedicationPage()),//view page
                       );
                     },
                     child: const Text("View All Medications"),

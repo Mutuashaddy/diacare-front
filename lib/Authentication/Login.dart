@@ -17,7 +17,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final emailController = TextEditingController();
 final passwordController = TextEditingController();
-final baseUrl = "http://10.124.180.254:8000/api/";   
+final baseUrl = "http://192.168.100.27:8000/api/";   
 
 //fuction login proces
 Future<void> loginUser() async {
@@ -41,6 +41,9 @@ Future<void> loginUser() async {
       // Save token using SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString("token", token);
+      
+
+
 
       // Navigate after success
       Navigator.pushReplacement(

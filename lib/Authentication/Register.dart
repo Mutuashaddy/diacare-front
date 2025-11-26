@@ -16,7 +16,7 @@ class _RegisterState extends State<Register> {
   final dobController = TextEditingController();
   final passController = TextEditingController();
   final confirmPassController = TextEditingController();
-  final baseUrl = "http://10.124.180.254:8000/api/";
+  final baseUrl = "http://192.168.100.27:8000/api/";
  // Replace with your API base URL
 
   final _formkey = GlobalKey<FormState>();
