@@ -1,5 +1,6 @@
 
 import 'package:diacare/Authentication/Index.dart';
+import 'package:diacare/Authentication/Reminder.dart';
 import 'package:flutter/material.dart';
 import 'package:diacare/Authentication/Login.dart';
 import 'package:diacare/Authentication/Register.dart';
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         
       ),
-      home: Register() ,
+      home: ReminderPage(),//Register() ,
       debugShowCheckedModeBanner: false ,
     );
   }

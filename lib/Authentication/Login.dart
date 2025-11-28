@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 
-
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -17,7 +16,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final emailController = TextEditingController();
 final passwordController = TextEditingController();
-final baseUrl = "http://192.168.100.27:8000/api/";   
+final baseUrl = "http://192.168.100.126:8000/api/";   
 
 //fuction login proces
 Future<void> loginUser() async {
@@ -44,7 +43,6 @@ Future<void> loginUser() async {
       
 
 
-
       // Navigate after success
       Navigator.pushReplacement(
         context,
@@ -61,7 +59,6 @@ Future<void> loginUser() async {
     );
   }
 }
-
 
 
   bool _passwordVisible = false;
@@ -216,3 +213,5 @@ const SizedBox(height: 20),
     );
   }
 }
+
+

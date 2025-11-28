@@ -1,10 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:diacare/Authentication/Profile.dart';
-import 'package:diacare/Authentication/Emergency.dart';
-import 'package:diacare/Authentication/Home.dart';
-import 'package:diacare/Authentication/Reminder.dart ';
-import 'package:diacare/Authentication/Medication.dart ';
-
 
 class MedicationPage extends StatefulWidget {
   const MedicationPage({super.key});
@@ -16,119 +10,111 @@ class MedicationPage extends StatefulWidget {
 class _MedicationPageState extends State<MedicationPage> {
   final nameController = TextEditingController();
   final dosageController = TextEditingController();
-  final timeController = TextEditingController();
   final notesController = TextEditingController();
-
-  Future<void> pickTime() async {
-    TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-
-    if (picked != null) {
-      setState(() {
-        timeController.text = picked.format(context);
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE3F4F4),
 
-      // floating action button to add medication
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF1A7B7D),
-        child: const Icon(Icons.add, size: 30),
-        onPressed: () {
-          // Add another medication logic
-        },
+      // Move floating button upward slightly
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 70), // so it stays above Save button
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xFF1A7B7D),
+          child: const Icon(Icons.add, color: Colors.white),
+          onPressed: () {},
+        ),
       ),
 
-      // Logo , title and save button
+      // Clean AppBar
       appBar: AppBar(
         backgroundColor: const Color(0xFFE3F4F4),
         elevation: 0,
         centerTitle: true,
-        title: Column(
-          children: [
-            Icon(Icons.local_hospital, size: 40, color: Colors.teal[700]),
-            const SizedBox(height: 4),
-            const Text(
-              "Medication",
-              style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20),
-            ),
-            const SizedBox(height: 4),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save, color: Colors.black),
-            onPressed: () {
-              // Submit
-            },
-          )
-        ],
-      ),
-      
- 
-      // Form Body
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: "Medicine Name",
-                  prefixIcon: Icon(Icons.medication),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 15),
-
-              TextField(
-                controller: dosageController,
-                decoration: const InputDecoration(
-                  labelText: "Dosage",
-                  prefixIcon: Icon(Icons.line_weight),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 15),
-
-              // TextField(
-              //   controller: timeController,
-              //   readOnly: true,
-              //   decoration: const InputDecoration(
-              //     labelText: "Time To Take",
-              //     prefixIcon: Icon(Icons.schedule),
-              //     border: OutlineInputBorder(),
-              //   ),
-              //   onTap: pickTime,
-              // ),
-              const SizedBox(height: 15),
-
-              TextField(
-                controller: notesController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: "Notes",
-                  prefixIcon: Icon(Icons.note_alt_outlined),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
+        title: const Text(
+          "Medication",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
 
-   
+      // Body + save button
+      body: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: "Medicine Name",
+                        prefixIcon: Icon(Icons.medication),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+
+                    TextField(
+                      controller: dosageController,
+                      decoration: const InputDecoration(
+                        labelText: "Dosage",
+                        prefixIcon: Icon(Icons.line_weight),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+
+                    TextField(
+                      controller: notesController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: "Notes",
+                        prefixIcon: Icon(Icons.note_alt_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Bottom Save button (smaller now)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            child: SizedBox(
+              height: 48, // smaller size
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A7B7D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {},
+                child: const Text(
+                  "SAVE",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
+
