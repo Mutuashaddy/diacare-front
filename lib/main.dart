@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         
       ),
-      home: ReminderPage(),//Register() ,
+      home:EmergencyPage(),//BloodPressurePage(),//BloodSugarPage(), //MedicationPage(),//BioData(),//HomeScreen(),//Splash(),//ReminderPage(),//Register() ,
       debugShowCheckedModeBanner: false ,
     );
   }
