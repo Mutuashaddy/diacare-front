@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:diacare/Authentication/Login.dart';
+import 'package:diacare/Authentication/api_config.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -16,13 +18,13 @@ class _RegisterState extends State<Register> {
   final dobController = TextEditingController();
   final passController = TextEditingController();
   final confirmPassController = TextEditingController();
-  final baseUrl = "http://192.168.100.27:8000/api/";
- // Replace with your API base URL
+  // Use 127.0.0.1 with `adb reverse tcp:8000 tcp:8000` for physical devices
 
   final _formkey = GlobalKey<FormState>();
    final emailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
 
   bool _passwordVisible = false; 
+  bool _isLoading = false;
 
 
   DateTime? dob;
@@ -39,8 +41,7 @@ class _RegisterState extends State<Register> {
 
     if (selected != null) {
       dob = selected;
-      dobController.text =
-          "${selected.year}-${selected.month}-${selected.day}"; 
+      dobController.text = DateFormat('yyyy-MM-dd').format(selected); 
     }
   }
 
@@ -56,12 +57,27 @@ class _RegisterState extends State<Register> {
   }
 
   Future<void> registerUser() async {
-    if (!_formkey.currentState!.validate()) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    print("Register button pressed.");
+    if (!_formkey.currentState!.validate()) {
+      print("Form validation failed.");
+      // Stop the loading indicator if validation fails
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
 
     if (dob == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select your date of birth.")),
       );
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
@@ -72,11 +88,15 @@ class _RegisterState extends State<Register> {
         const SnackBar(
             content: Text("You must be at least 15 years old to register.")),
       );
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
-    final registerUrl = Uri.parse("${baseUrl}register");
+    final registerUrl = Uri.parse("${ApiConfig.baseUrl}register");
 
+    print("Attempting to register with URL: $registerUrl");
     try {
       final response = await http.post(
         registerUrl,
@@ -88,23 +108,65 @@ class _RegisterState extends State<Register> {
           'password': passController.text,
           'password_confirmation': confirmPassController.text, 
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
-        Navigator.push(
+        print("Registration successful!");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Registration successful! Please log in."),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const Login()),
         );
+      } else if (response.statusCode == 422) {
+        // Handle validation errors from the backend
+        final errors = jsonDecode(response.body)['errors'] as Map<String, dynamic>;
+        String errorMessage = "Registration failed:\n";
+        errors.forEach((key, value) {
+          errorMessage += "- ${value[0]}\n";
+        });
+        _showErrorDialog("Validation Error", errorMessage.trim());
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Registration failed: ${response.body}")),
-        );
+        // Handle other server errors
+        _showErrorDialog("Registration Failed", "An unexpected error occurred. Please try again. (Status: ${response.statusCode})");
       }
     } catch (e) {
+      print("An error occurred during registration: $e");
+      if (!mounted) return;
+      // Provide more specific feedback for timeouts
+      String errorMessage = e.toString().contains('TimeoutException')
+          ? "Could not connect to the server. Please check your network connection and try again."
+          : "An unexpected error occurred: $e";
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  void _showErrorDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Okay'),
+            onPressed: () => Navigator.of(ctx).pop(),
+          )
+        ],
+      ),
+    );
   }
 
   @override
@@ -181,8 +243,15 @@ class _RegisterState extends State<Register> {
                 TextFormField(
                   controller: passController,
                   obscureText: !_passwordVisible,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Enter your password' : null,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
                   decoration: InputDecoration(
                     labelText: "Password",
                     border: const OutlineInputBorder(),
@@ -233,15 +302,17 @@ class _RegisterState extends State<Register> {
                 SizedBox(
   width: double.infinity,
   child: ElevatedButton(
-    onPressed: registerUser,
+    onPressed: _isLoading ? null : registerUser,
     style: ElevatedButton.styleFrom(
       backgroundColor: Color(0xFF1A7B7D),
       padding: EdgeInsets.symmetric(vertical: 15),
     ),
-    child: Text(
-      'Register',
-      style: TextStyle(color: Colors.white, fontSize: 16),
-    ),
+    child: _isLoading
+        ? const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          )
+        : const Text('Register',
+            style: TextStyle(color: Colors.white, fontSize: 16)),
   ),
 ),
 
@@ -274,10 +345,5 @@ Row(
         ),
       ),
     );
-
-      
-    
-
-}
   }
-
+}

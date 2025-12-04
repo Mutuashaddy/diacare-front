@@ -26,9 +26,7 @@ class _ReminderPageState extends State<ReminderPage> {
     _initNotifications();
   }
 
-  
-  //fuction to push notification
-  
+  // INIT NOTIFICATIONS
   Future<void> _initNotifications() async {
     tz.initializeTimeZones();
 
@@ -41,13 +39,13 @@ class _ReminderPageState extends State<ReminderPage> {
 
     await notifications.initialize(initSettings);
 
-    //Request permissions 
+    // Request permission
     await notifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
-    
+    // Create channel
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'med_channel',
       'Medication Reminders',
@@ -62,7 +60,6 @@ class _ReminderPageState extends State<ReminderPage> {
   }
 
   // TIME PICKER
-  
   Future<TimeOfDay?> _pickTime(
       BuildContext context, TimeOfDay initial) async {
     return await showTimePicker(
@@ -71,8 +68,7 @@ class _ReminderPageState extends State<ReminderPage> {
     );
   }
 
-  //ADD NEW MEDICATION
-  
+  // ADD NEW MEDICATION
   void addMedication() {
     setState(() {
       medications.add(
@@ -81,8 +77,7 @@ class _ReminderPageState extends State<ReminderPage> {
     });
   }
 
-  
-  //SAVE MEDICATIONS
+  // SAVE MEDICATIONS
   void saveMedications() {
     for (var med in medications) {
       if (med.name.trim().isNotEmpty) {
@@ -95,13 +90,10 @@ class _ReminderPageState extends State<ReminderPage> {
     );
   }
 
-  
-  // SCHEDULE NOTIFICATION (DAILY)
- 
+  // SCHEDULE DAILY NOTIFICATION
   Future<void> scheduleNotification(Medication med) async {
     final now = tz.TZDateTime.now(tz.local);
 
-    //Create today's scheduled time
     tz.TZDateTime scheduled = tz.TZDateTime(
       tz.local,
       now.year,
@@ -111,7 +103,7 @@ class _ReminderPageState extends State<ReminderPage> {
       med.time.minute,
     );
 
-    // If time already passed today → schedule for tomorrow
+    // If time passed → schedule for tomorrow
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
@@ -133,14 +125,11 @@ class _ReminderPageState extends State<ReminderPage> {
       scheduled,
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time, 
-
+      matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 
-  
   // UI
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -202,28 +191,34 @@ class _ReminderPageState extends State<ReminderPage> {
                       },
                     ),
             ),
-
-            // SAVE BUTTON
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: saveMedications,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  minimumSize: const Size.fromHeight(50),
-                ),
-                icon: const Icon(Icons.save, color: Colors.white),
-                label: const Text(
-                  "Save Reminders",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            )
           ],
+        ),
+      ),
+
+      // FIXED SAVE BUTTON AT BOTTOM
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: SizedBox(
+          height: 50,
+          child: ElevatedButton.icon(
+            onPressed: saveMedications,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.save, color: Colors.white),
+            label: const Text(
+              "Save Reminders",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
-
-

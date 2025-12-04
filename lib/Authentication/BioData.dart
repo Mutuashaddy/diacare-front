@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:diacare/Authentication/api_config.dart';
+import 'package:diacare/Authentication/Emergency.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BioData extends StatefulWidget {
   const BioData({super.key});
@@ -17,18 +20,16 @@ class _BioDataState extends State<BioData> {
   final ageController = TextEditingController();
   final emergencyContactController = TextEditingController();
   final doctorNumberController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   bool isLoading = false;
 
-  // Dropdown values
   String? selectedGender;
   String? selectedDiabetesType;
 
-  // Dropdown lists
   final genderList = ["Male", "Female", "Other"];
   final diabetesTypes = ["Type 1", "Type 2", "Gestational", "Prediabetes"];
 
-  // Pick Date of Birth
   Future<void> pickDate(BuildContext context) async {
     DateTime? datePicked = await showDatePicker(
       context: context,
@@ -43,7 +44,6 @@ class _BioDataState extends State<BioData> {
       setState(() {
         dobController.text = formattedDate;
 
-        // Auto-calc age
         final today = DateTime.now();
         int age = today.year - datePicked.year;
 
@@ -57,13 +57,27 @@ class _BioDataState extends State<BioData> {
     }
   }
 
-  // SAVE BIODATA FUNCTION
   Future<void> saveBioData() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all required fields.")),
+      );
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
 
-    final url = Uri.parse("http://192.168.100.126/api/");
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      setState(() => isLoading = false);
+      return;
+    }
+
+    final url = Uri.parse("${ApiConfig.baseUrl}bio-data");
 
     final data = {
       "full_name": fullNameController.text,
@@ -78,207 +92,183 @@ class _BioDataState extends State<BioData> {
     try {
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
         body: jsonEncode(data),
       );
 
-      if (response.statusCode == 200) {
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("BioData saved successfully!"),
             backgroundColor: Colors.green,
           ),
         );
+
+        await prefs.setBool("bioDataFilled", true);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const EmergencyPage()),
+        );
+      } else if (response.statusCode == 422) {
+        final errors = jsonDecode(response.body)['errors'];
+        String msg = "Fix the following:\n";
+        errors.forEach((k, v) {
+          msg += "- ${v[0]}\n";
+        });
+        _showErrorDialog("Validation Failed", msg);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to save: ${response.body}"),
-            backgroundColor: Colors.red,
-          ),
+        _showErrorDialog(
+          "Error",
+          "Unknown error occurred. Status: ${response.statusCode}",
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: $e"),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
       );
     }
 
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void _showErrorDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          )
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    int _currentIndex = 3; // Profile active
-
     return Scaffold(
       backgroundColor: const Color(0xFFE3F4F4),
-
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A7B7D),
+        title: const Text("BioData", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        title: const Text(
-          "BioData",
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.edit, color: Colors.white),
-          ),
-        ],
       ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // FULL NAME
-            TextField(
-              controller: fullNameController,
-              decoration: InputDecoration(
-                labelText: "Full Name",
-                prefixIcon: const Icon(Icons.person, color: Color(0xFF1A7B7D)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: fullNameController,
+                validator: (v) => v!.isEmpty ? "Enter your full name" : null,
+                decoration: _input("Full Name", Icons.person),
               ),
-            ),
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // DOB
-            TextField(
-              controller: dobController,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "Date of Birth",
-                prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF1A7B7D)),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.date_range, color: Color(0xFF1A7B7D)),
-                  onPressed: () => pickDate(context),
-                ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              TextFormField(
+                controller: dobController,
+                readOnly: true,
+                validator: (v) => v!.isEmpty ? "Select your DOB" : null,
+                decoration: _input("Date of Birth", Icons.calendar_today,
+                    suffix: Icons.date_range,
+                    onSuffixTap: () => pickDate(context)),
               ),
-            ),
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // AGE
-            TextField(
-              controller: ageController,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "Age",
-                prefixIcon: const Icon(Icons.timelapse, color: Color(0xFF1A7B7D)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              TextFormField(
+                controller: ageController,
+                readOnly: true,
+                decoration: _input("Age", Icons.timelapse),
               ),
-            ),
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // GENDER
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.black45),
-              ),
-              child: DropdownButtonFormField<String>(
+              DropdownButtonFormField(
                 value: selectedGender,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  icon: Icon(Icons.wc, color: Color(0xFF1A7B7D)),
-                  labelText: "Gender",
-                ),
-                items: genderList.map((gender) {
-                  return DropdownMenuItem(
-                    value: gender,
-                    child: Text(gender),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => selectedGender = value);
-                },
+                validator: (v) => v == null ? "Select gender" : null,
+                decoration: _input("Gender", Icons.wc),
+                items: genderList
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (v) => setState(() => selectedGender = v),
               ),
-            ),
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // DIABETES TYPE
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.black45),
-              ),
-              child: DropdownButtonFormField<String>(
+              DropdownButtonFormField(
                 value: selectedDiabetesType,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  icon: Icon(Icons.medical_services, color: Color(0xFF1A7B7D)),
-                  labelText: "Diabetes Type",
-                ),
-                items: diabetesTypes.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(type),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => selectedDiabetesType = value);
-                },
+                validator: (v) => v == null ? "Select diabetes type" : null,
+                decoration: _input("Diabetes Type", Icons.medical_services),
+                items: diabetesTypes
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (v) => setState(() => selectedDiabetesType = v),
               ),
-            ),
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // EMERGENCY CONTACT
-            TextField(
-              controller: emergencyContactController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: "Emergency Contact",
-                prefixIcon: const Icon(Icons.phone_android, color: Color(0xFF1A7B7D)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              TextFormField(
+                controller: emergencyContactController,
+                validator: (v) => v!.isEmpty ? "Enter emergency contact" : null,
+                keyboardType: TextInputType.phone,
+                decoration: _input("Emergency Contact", Icons.phone_android),
               ),
-            ),
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // DOCTOR NUMBER
-            TextField(
-              controller: doctorNumberController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: "Doctor’s Number",
-                prefixIcon: const Icon(Icons.local_hospital, color: Color(0xFF1A7B7D)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              TextFormField(
+                controller: doctorNumberController,
+                keyboardType: TextInputType.phone,
+                decoration:
+                    _input("Doctor's Number (Optional)", Icons.local_hospital),
               ),
-            ),
-            const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-            // SAVE BUTTON
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A7B7D),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A7B7D),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
+                  onPressed: isLoading ? null : saveBioData,
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Save BioData",
+                          style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
-                onPressed: isLoading ? null : saveBioData,
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        "Save BioData",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+
+  InputDecoration _input(String label, IconData icon,
+      {IconData? suffix, VoidCallback? onSuffixTap}) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Color(0xFF1A7B7D)),
+      suffixIcon: suffix != null
+          ? IconButton(
+              onPressed: onSuffixTap,
+              icon: Icon(suffix, color: Color(0xFF1A7B7D)),
+            )
+          : null,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+    );
+  }
 }
-
-

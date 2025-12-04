@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:diacare/Authentication/Profile.dart';
-import 'package:diacare/Authentication/Emergency.dart';
-import 'package:diacare/Authentication/Home.dart';
-import 'package:diacare/Authentication/Reminder.dart ';
-import 'package:diacare/Authentication/Medication.dart ';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:diacare/Authentication/api_config.dart';
 
+import 'package:diacare/Authentication/Home.dart';
 class BloodPressurePage extends StatefulWidget {
   const BloodPressurePage({super.key});
 
@@ -17,6 +17,7 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
   final systolicController = TextEditingController();
   final diastolicController = TextEditingController();
   final heartRateController = TextEditingController();
+  final dateController = TextEditingController();
   final timeController = TextEditingController();
 
   // Dropdown values
@@ -26,6 +27,8 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
 
   // Colors
   final Color bgColor = const Color(0xFFE3F4F4);
+  final Color textColor = Colors.black;
+  final Color hintColor = Colors.black54;
   final Color mainColor = const Color(0xFF1A7B7D);
 
   // Time Picker
@@ -40,6 +43,89 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
         timeController.text = picked.format(context);
       });
     }
+  }
+
+  // Date Picker
+  Future<void> pickDate() async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        dateController.text = picked.toIso8601String().split('T').first;
+      });
+    }
+  }
+
+  // Save Blood Pressure Data
+  Future<void> saveBloodPressure() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      _showErrorDialog("Authentication Error", "Please log in again.");
+      return;
+    }
+
+    final url = Uri.parse("${ApiConfig.baseUrl}blood-pressure");
+
+    final data = {
+      "systolic": systolicController.text,
+      "diastolic": diastolicController.text,
+      "heart_rate": heartRateController.text,
+      "measured_at": measuredAt,
+      "measurement_time": timeController.text,
+      "measurement_date": dateController.text,
+      "measurement_position": measurementPosition,
+      "measurement_arm": measurementArm,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(data),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Blood Pressure data saved successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else {
+        _showErrorDialog("Error", "Failed to save data: ${response.body}");
+      }
+    } catch (e) {
+      _showErrorDialog("Network Error", "An error occurred: $e");
+    }
+  }
+
+  void _showErrorDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK"))
+        ],
+      ),
+    );
   }
 
   @override
@@ -140,6 +226,24 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
                 ),
               ),
               const SizedBox(height: 20),
+              
+              // Measurement Date
+              TextField(
+                controller: dateController,
+                readOnly: true,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  labelText: "Measurement Date",
+                  prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF1A7B7D)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.date_range, color: Color(0xFF1A7B7D)),
+                    onPressed: pickDate,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
 
               // Unit (fixed mmHg)
               Container(
@@ -204,7 +308,7 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   onPressed: () {
-                    // Handle submission
+                    saveBloodPressure();
                   },
                   child: const Text(
                     "Save",

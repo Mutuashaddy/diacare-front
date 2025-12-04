@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:diacare/Authentication/api_config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:diacare/Authentication/Home.dart';
 
 class EmergencyPage extends StatefulWidget {
   const EmergencyPage({super.key});
@@ -11,82 +14,95 @@ class EmergencyPage extends StatefulWidget {
 }
 
 class _EmergencyPageState extends State<EmergencyPage> {
-  bool isEditing = false;
+  bool isEditing = true;
+  bool isLoading = false;
 
   // Controllers
-  TextEditingController caregiverName = TextEditingController();
-  TextEditingController caregiverNumber = TextEditingController();
+  final TextEditingController caregiverName = TextEditingController();
+  final TextEditingController caregiverNumber = TextEditingController();
 
-  TextEditingController doctorName = TextEditingController();
-  TextEditingController doctorNumber = TextEditingController();
+  final TextEditingController doctorName = TextEditingController();
+  final TextEditingController doctorNumber = TextEditingController();
 
-  // 🌟 NEW CONTROLLER for Hospital Name
-  TextEditingController hospitalName = TextEditingController();
-  TextEditingController hospitalNumber = TextEditingController();
-  TextEditingController hospitalLocation = TextEditingController();
+  final TextEditingController hospitalName = TextEditingController();
+  final TextEditingController hospitalNumber = TextEditingController();
+  final TextEditingController hospitalLocation = TextEditingController();
 
-  // Your backend API URL
-  final String apiUrl = "http://YOUR_SERVER_IP/api/emergency"; // <-- replace with your endpoint
-
-  // Call method
+  // CALL FUNCTION
   Future<void> callNumber(String number) async {
     final Uri uri = Uri(scheme: 'tel', path: number);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not launch phone app for $number')),
+        SnackBar(content: Text("Could not call $number")),
       );
     }
   }
 
-  // Save to database
+  // SAVE FUNCTION
   Future<void> saveToDatabase() async {
+    setState(() => isLoading = true);
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Authentication error. Please log in again.")),
+      );
+      setState(() => isLoading = false);
+      return;
+    }
+
     try {
       final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {"Content-Type": "application/json"},
+        Uri.parse("${ApiConfig.baseUrl}emergency"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
         body: jsonEncode({
           "caregiver_name": caregiverName.text,
           "caregiver_number": caregiverNumber.text,
           "doctor_name": doctorName.text,
           "doctor_number": doctorNumber.text,
-          // 🌟 Updated to include hospital_name
-          "hospital_name": hospitalName.text, 
+          "hospital_name": hospitalName.text,
           "hospital_number": hospitalNumber.text,
           "hospital_location": hospitalLocation.text,
         }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Success
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Emergency contacts saved successfully!")),
-          );
-          setState(() => isEditing = false);
-        }
+        await prefs.setBool("emergencyContactFilled", true);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Saved successfully!")),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else if (response.statusCode == 422) {
+        final errors = jsonDecode(response.body)['errors'];
+        String errorMessage = "";
+        errors.forEach((key, value) => errorMessage += "- ${value[0]}\n");
+        _showErrorDialog("Validation Error", errorMessage.trim());
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to save: ${response.statusCode}")),
-          );
-        }
+        _showErrorDialog("Error", "Status: ${response.statusCode}");
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
-        );
-      }
+      _showErrorDialog("Network Error", e.toString());
     }
+
+    setState(() => isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE3F4F4),
-
       appBar: AppBar(
         backgroundColor: const Color(0xFFE3F4F4),
         elevation: 0,
@@ -99,7 +115,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
             color: Colors.black,
           ),
         ),
-
         actions: [
           IconButton(
             icon: Icon(isEditing ? Icons.check : Icons.edit, color: Colors.black),
@@ -110,19 +125,18 @@ class _EmergencyPageState extends State<EmergencyPage> {
         ],
       ),
 
+      // BODY
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             children: [
-
               buildCard(
                 icon: Icons.person,
                 title: "Caregiver",
                 nameController: caregiverName,
                 numberController: caregiverNumber,
               ),
-
               const SizedBox(height: 15),
 
               buildCard(
@@ -131,15 +145,13 @@ class _EmergencyPageState extends State<EmergencyPage> {
                 nameController: doctorName,
                 numberController: doctorNumber,
               ),
-
               const SizedBox(height: 15),
 
-              // 🌟 CONSOLIDATED HOSPITAL CARD
+              // HOSPITAL CARD
               Card(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
-                    // Hospital Name
                     ListTile(
                       leading: const Icon(Icons.apartment, color: Colors.teal, size: 30),
                       title: TextField(
@@ -151,7 +163,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
                         enabled: isEditing,
                       ),
                     ),
-                    // Hospital Number
                     ListTile(
                       leading: const Icon(Icons.call, color: Colors.green, size: 28),
                       title: TextField(
@@ -164,7 +175,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
                         enabled: isEditing,
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.phone, color: Colors.green, size: 30),
+                        icon: const Icon(Icons.phone, color: Colors.green),
                         onPressed: () {
                           if (hospitalNumber.text.isNotEmpty) {
                             callNumber(hospitalNumber.text);
@@ -172,7 +183,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
                         },
                       ),
                     ),
-                    // Hospital Location Link
+
                     ListTile(
                       leading: const Icon(Icons.location_on, color: Colors.teal, size: 30),
                       title: TextField(
@@ -184,11 +195,10 @@ class _EmergencyPageState extends State<EmergencyPage> {
                         enabled: isEditing,
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.map, color: Colors.teal, size: 30),
+                        icon: const Icon(Icons.map, color: Colors.teal),
                         onPressed: () {
                           if (hospitalLocation.text.isNotEmpty) {
-                            launchUrl(
-                              Uri.parse(hospitalLocation.text),
+                            launchUrl(Uri.parse(hospitalLocation.text),
                               mode: LaunchMode.externalApplication,
                             );
                           }
@@ -201,22 +211,26 @@ class _EmergencyPageState extends State<EmergencyPage> {
 
               const SizedBox(height: 30),
 
-              // SAVE BUTTON (Color updated to 0xFF1A7B7D)
+              // SAVE BUTTON
               Visibility(
                 visible: isEditing,
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A7B7D), // The requested color
+                      backgroundColor: const Color(0xFF1A7B7D),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    onPressed: saveToDatabase,
-                    child: const Text("Save", style: TextStyle(color: Colors.white, fontSize: 18)), // White text
+                    onPressed: isLoading ? null : saveToDatabase,
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Save", style: TextStyle(color: Colors.white, fontSize: 18)),
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -224,7 +238,24 @@ class _EmergencyPageState extends State<EmergencyPage> {
     );
   }
 
-  // Contact Card Template
+  // ERROR DIALOG
+  void _showErrorDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            child: const Text("OK"),
+            onPressed: () => Navigator.pop(context),
+          )
+        ],
+      ),
+    );
+  }
+
+  // REUSABLE CARD
   Widget buildCard({
     required IconData icon,
     required String title,
@@ -247,7 +278,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.call, color: Colors.green, size: 28),
+            leading: const Icon(Icons.call, color: Colors.green),
             title: TextField(
               controller: numberController,
               keyboardType: TextInputType.phone,
@@ -258,7 +289,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
               enabled: isEditing,
             ),
             trailing: IconButton(
-              icon: const Icon(Icons.phone, color: Colors.green, size: 30),
+              icon: const Icon(Icons.phone, color: Colors.green),
               onPressed: () {
                 if (numberController.text.isNotEmpty) {
                   callNumber(numberController.text);
@@ -271,4 +302,3 @@ class _EmergencyPageState extends State<EmergencyPage> {
     );
   }
 }
-
