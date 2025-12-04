@@ -73,16 +73,16 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
 
     final url = Uri.parse("${ApiConfig.baseUrl}blood-pressure");
 
-    final data = {
-      "systolic": systolicController.text,
-      "diastolic": diastolicController.text,
-      "heart_rate": heartRateController.text,
-      "measured_at": measuredAt,
-      "measurement_time": timeController.text,
-      "measurement_date": dateController.text,
-      "measurement_position": measurementPosition,
-      "measurement_arm": measurementArm,
-    };
+   final data = {
+  "systolic": int.parse(systolicController.text),
+  "diastolic": int.parse(diastolicController.text),
+  "heart_rate": int.tryParse(heartRateController.text),
+  "measurement_position": measurementPosition,
+  "measurement_arm": measurementArm,
+  "measurement_time": measuredAt,   // Morning / Noon / Evening...
+  "measured_at": "${dateController.text} ${timeController.text}",
+};
+
 
     try {
       final response = await http.post(
