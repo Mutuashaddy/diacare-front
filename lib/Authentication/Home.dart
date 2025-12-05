@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:diacare/Authentication/BloodPressure.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:diacare/Authentication/PostPage.dart';
 import 'package:diacare/Authentication/BloodSugar.dart';
 import 'package:diacare/Authentication/Profile.dart';
@@ -7,9 +10,11 @@ import 'package:diacare/Authentication/Medication.dart';
 import 'package:diacare/Authentication/Emergency.dart';
 import 'package:diacare/Authentication/Home.dart';
 import 'package:diacare/Authentication/Reminder.dart';
+import 'package:diacare/Authentication/api_config.dart';
 import 'package:diacare/Authentication/ViewBloodPressure.dart';
 import 'package:diacare/Authentication/ViewBloodSugar.dart';
 import 'package:diacare/Authentication/ViewMedication.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,12 +25,47 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  String? _userName;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserName();
+  }
+
+  Future<void> _fetchUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      // Not logged in
+      return;
+    }
+
+    final url = Uri.parse("${ApiConfig.baseUrl}biodata");
+
+    try {
+      final response = await http.get(url, headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      });
+
+      if (mounted && response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _userName = data['full_name'];
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       _homePage(context),
-      const MedicationPage(),
+      const ReminderPage(),
       const EmergencyPage(),
       const ProfilePage(),
     ];
@@ -43,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminders"),
+          BottomNavigationBarItem(icon: Icon(Icons.access_time), label: "Reminder"),
           BottomNavigationBarItem(icon: Icon(Icons.local_hospital), label: "Emergency"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
@@ -58,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          _buildHeaderSection(screenWidth),
+          _buildHeaderSection(screenWidth, _userName),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -120,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // HEADER SECTION
-  Widget _buildHeaderSection(double screenWidth) {
+  Widget _buildHeaderSection(double screenWidth, String? userName) {
     return Container(
       width: screenWidth,
       padding: const EdgeInsets.only(top: 60, bottom: 20, left: 20, right: 20),
@@ -136,9 +176,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          const Text(
-            'How are you feeling today?',
-            style: TextStyle(fontSize: 18, color: Colors.white),
+          Text(
+            'How are you feeling today, ${userName ?? ''}?',
+            style: const TextStyle(fontSize: 18, color: Colors.white),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 5),
           const Text(

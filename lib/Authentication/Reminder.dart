@@ -2,15 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:diacare/Authentication/api_config.dart';
 
+// MEDICATION MODEL
 class Medication {
   String name;
   TimeOfDay time;
-  Medication({required this.name, required this.time});
+
+  TextEditingController nameController;
+
+  Medication({
+    required this.name,
+    required this.time,
+  }) : nameController = TextEditingController(text: name);
+
+  void dispose() {
+    nameController.dispose();
+  }
 }
 
 class ReminderPage extends StatefulWidget {
   const ReminderPage({super.key});
+
   @override
   State<ReminderPage> createState() => _ReminderPageState();
 }
@@ -26,26 +42,31 @@ class _ReminderPageState extends State<ReminderPage> {
     _initNotifications();
   }
 
+  @override
+  void dispose() {
+    for (var med in medications) {
+      med.dispose();
+    }
+    super.dispose();
+  }
+
   // INIT NOTIFICATIONS
   Future<void> _initNotifications() async {
     tz.initializeTimeZones();
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-    );
+    const initSettings = InitializationSettings(android: androidSettings);
 
     await notifications.initialize(initSettings);
 
-    // Request permission
+    // Request notification permission
     await notifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
-    // Create channel
+    // Notification channel
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'med_channel',
       'Medication Reminders',
@@ -60,8 +81,7 @@ class _ReminderPageState extends State<ReminderPage> {
   }
 
   // TIME PICKER
-  Future<TimeOfDay?> _pickTime(
-      BuildContext context, TimeOfDay initial) async {
+  Future<TimeOfDay?> _pickTime(BuildContext context, TimeOfDay initial) async {
     return await showTimePicker(
       context: context,
       initialTime: initial,
@@ -74,23 +94,107 @@ class _ReminderPageState extends State<ReminderPage> {
       medications.add(
         Medication(name: "", time: TimeOfDay.now()),
       );
+
+      medications.last.nameController.addListener(() {
+        medications.last.name = medications.last.nameController.text;
+      });
     });
   }
 
-  // SAVE MEDICATIONS
-  void saveMedications() {
+  // SAVE ALL MEDICATIONS
+  Future<void> saveMedications() async {
+    bool allSavedToDb = true;
+
     for (var med in medications) {
       if (med.name.trim().isNotEmpty) {
         scheduleNotification(med);
+
+        final success = await _saveReminderToDatabase(med);
+        if (!success) allSavedToDb = false;
       }
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Medication reminders saved!")),
+    if (allSavedToDb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Medication reminders saved successfully!")),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Some reminders failed to save to the database.")),
+      );
+    }
+  }
+
+  // SAVE REMINDER TO DATABASE (WITH DEBUG PRINT)
+  Future<bool> _saveReminderToDatabase(Medication med) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      if (mounted) {
+        _showErrorDialog(
+            "Authentication Error", "You are not logged in. Please log in again.");
+      }
+      return false;
+    }
+
+    final url = Uri.parse("${ApiConfig.baseUrl}reminders");
+
+    final data = {
+      'medicine_name': med.name,
+      'time_to_take':
+          '${med.time.hour.toString().padLeft(2, '0')}:${med.time.minute.toString().padLeft(2, '0')}',
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(data),
+      );
+
+      // DEBUG PRINTS — SEE EXACT ERROR FROM LARAVEL
+      print("======== REMINDER API DEBUG ========");
+      print("URL: $url");
+      print("SEND DATA: $data");
+      print("STATUS CODE: ${response.statusCode}");
+      print("RESPONSE BODY: ${response.body}");
+      print("====================================");
+
+      if (!mounted) return false;
+
+      return response.statusCode == 201;
+    } catch (e) {
+      if (mounted) {
+        _showErrorDialog(
+            "Network Error for ${med.name}", "An unexpected error occurred: $e");
+      }
+      return false;
+    }
+  }
+
+  // ERROR DIALOG
+  void _showErrorDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+              child: const Text('Okay'),
+              onPressed: () => Navigator.of(ctx).pop())
+        ],
+      ),
     );
   }
 
-  // SCHEDULE DAILY NOTIFICATION
+  // SCHEDULE LOCAL DAILY NOTIFICATION
   Future<void> scheduleNotification(Medication med) async {
     final now = tz.TZDateTime.now(tz.local);
 
@@ -103,7 +207,6 @@ class _ReminderPageState extends State<ReminderPage> {
       med.time.minute,
     );
 
-    // If time passed → schedule for tomorrow
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
@@ -162,6 +265,7 @@ class _ReminderPageState extends State<ReminderPage> {
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           child: ListTile(
                             title: TextField(
+                              controller: med.nameController,
                               decoration: const InputDecoration(
                                 labelText: 'Medicine Name',
                                 border: InputBorder.none,
@@ -186,6 +290,12 @@ class _ReminderPageState extends State<ReminderPage> {
                                 )
                               ],
                             ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                setState(() => medications.removeAt(index));
+                              },
+                            ),
                           ),
                         );
                       },
@@ -195,7 +305,6 @@ class _ReminderPageState extends State<ReminderPage> {
         ),
       ),
 
-      // FIXED SAVE BUTTON AT BOTTOM
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: SizedBox(
