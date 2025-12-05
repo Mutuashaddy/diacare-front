@@ -19,6 +19,7 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
   final heartRateController = TextEditingController();
   final dateController = TextEditingController();
   final timeController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   // Dropdown values
   String? measuredAt;
@@ -63,36 +64,51 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
 
   // Save Blood Pressure Data
   Future<void> saveBloodPressure() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Please fill all the required fields.")),
+      );
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
     if (token == null) {
-      _showErrorDialog("Authentication Error", "Please log in again.");
+      if (mounted) {
+        _showErrorDialog("Authentication Error", "Please log in again.");
+      }
       return;
     }
 
     final url = Uri.parse("${ApiConfig.baseUrl}blood-pressure");
 
-   final data = {
-  "systolic": int.parse(systolicController.text),
-  "diastolic": int.parse(diastolicController.text),
-  "heart_rate": int.tryParse(heartRateController.text),
-  "measurement_position": measurementPosition,
-  "measurement_arm": measurementArm,
-  "measurement_time": measuredAt,   // Morning / Noon / Evening...
-  "measured_at": "${dateController.text} ${timeController.text}",
-};
+    final data = {
+      "systolic": systolicController.text,
+      "diastolic": diastolicController.text,
+      "heart_rate": heartRateController.text.isNotEmpty ? heartRateController.text : null,
+      "measurement_position": measurementPosition,
+      "measurement_arm": measurementArm,
+      "measurement_time": measuredAt, // "Morning", "Noon", etc.
+      "measured_at": dateController.text,
+    };
 
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
+      // Use a client that follows redirects to handle 302s properly
+      final client = http.Client();
+      final request = http.Request('POST', url)
+        ..headers.addAll({
           "Content-Type": "application/json",
+          "Accept": "application/json",
           "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(data),
-      );
+        })
+        ..body = jsonEncode(data);
+
+      final streamedResponse = await client.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+      client.close();
 
       if (!mounted) return;
 
@@ -107,11 +123,21 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
+      } else if (response.statusCode == 422) {
+        final errors = jsonDecode(response.body)['errors'] as Map<String, dynamic>;
+        String errorMessage = "Please correct the following errors:\n";
+        errors.forEach((key, value) {
+          errorMessage += "- ${value[0]}\n";
+        });
+        _showErrorDialog("Validation Failed", errorMessage);
       } else {
-        _showErrorDialog("Error", "Failed to save data: ${response.body}");
+        _showErrorDialog(
+            "Save Failed", "An unknown error occurred. Status code: ${response.statusCode}\nResponse: ${response.body}");
       }
     } catch (e) {
-      _showErrorDialog("Network Error", "An error occurred: $e");
+      if (mounted) {
+        _showErrorDialog("Error", "An unexpected error occurred: $e");
+      }
     }
   }
 
@@ -141,18 +167,23 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
         ),
       ),
 
-      body: Center(
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
           padding: const EdgeInsets.all(25),
+        child: Form(
+          key: _formKey,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
 
               // Systolic
-              TextField(
+              TextFormField(
                 controller: systolicController,
                 keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter systolic value';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   labelText: "Systolic (mmHg)",
                   prefixIcon: const Icon(Icons.monitor_heart, color: Color(0xFF1A7B7D)),
@@ -162,10 +193,15 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
               const SizedBox(height: 20),
 
               // Diastolic
-              TextField(
+              TextFormField(
                 controller: diastolicController,
                 keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter diastolic value';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   labelText: "Diastolic (mmHg)",
                   prefixIcon: const Icon(Icons.monitor_heart_outlined, color: Color(0xFF1A7B7D)),
@@ -175,10 +211,9 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
               const SizedBox(height: 20),
 
               // Heart Rate
-              TextField(
+              TextFormField(
                 controller: heartRateController,
                 keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   labelText: "Heart Rate (bpm)",
                   prefixIcon: const Icon(Icons.favorite, color: Color(0xFF1A7B7D)),
@@ -190,6 +225,12 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
               // Measured At
               DropdownButtonFormField(
                 value: measuredAt,
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select when it was measured';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   labelText: "Measured At",
                   prefixIcon: const Icon(Icons.access_time, color: Color(0xFF1A7B7D)),
@@ -211,10 +252,15 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
               const SizedBox(height: 20),
 
               // Measurement Time
-              TextField(
+              TextFormField(
                 controller: timeController,
                 readOnly: true,
-                textAlign: TextAlign.center,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please pick a time';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   labelText: "Measurement Time",
                   prefixIcon: const Icon(Icons.timer, color: Color(0xFF1A7B7D)),
@@ -228,10 +274,15 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
               const SizedBox(height: 20),
               
               // Measurement Date
-              TextField(
+              TextFormField(
                 controller: dateController,
                 readOnly: true,
-                textAlign: TextAlign.center,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please pick a date';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   labelText: "Measurement Date",
                   prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF1A7B7D)),
@@ -269,6 +320,12 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
               // Measurement Position 
               DropdownButtonFormField(
                 value: measurementPosition,
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a position';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   labelText: "Measurement Position",
                   prefixIcon: const Icon(Icons.accessibility_new, color: Color(0xFF1A7B7D)),
@@ -286,6 +343,12 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
               // Measurement Arm
               DropdownButtonFormField(
                 value: measurementArm,
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select an arm';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   labelText: "Measurement Arm",
                   prefixIcon: const Icon(Icons.pan_tool, color: Color(0xFF1A7B7D)),
@@ -307,9 +370,7 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
                     backgroundColor: mainColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  onPressed: () {
-                    saveBloodPressure();
-                  },
+                  onPressed: saveBloodPressure,
                   child: const Text(
                     "Save",
                     style: TextStyle(color: Colors.white, fontSize: 17),
@@ -318,11 +379,7 @@ class _BloodPressurePageState extends State<BloodPressurePage> {
               )
             ],
           ),
-        ),
-      
-    ),
-    
- 
+        ),),
     );
   }
 }

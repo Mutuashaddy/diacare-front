@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:diacare/Authentication/api_config.dart';
+import 'package:diacare/Authentication/Home.dart';
+
 
 class MedicationPage extends StatefulWidget {
   const MedicationPage({super.key});
@@ -11,6 +17,74 @@ class _MedicationPageState extends State<MedicationPage> {
   final nameController = TextEditingController();
   final dosageController = TextEditingController();
   final notesController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  Future<void> _saveMedication() async {
+    if (!_formKey.currentState!.validate()) {
+      return; // Validation failed
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      if (mounted) {
+        _showErrorDialog("Authentication Error", "You are not logged in. Please log in again.");
+      }
+      return;
+    }
+
+    final url = Uri.parse("${ApiConfig.baseUrl}medications");
+
+    final data = {
+      'medicine_name': nameController.text,
+      'dosage': dosageController.text,
+      'notes': notesController.text,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(data),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Medication saved successfully!"), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (Route<dynamic> route) => false,
+        );
+      } else {
+        _showErrorDialog("Save Failed", "An error occurred: ${response.body}");
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorDialog("Error", "An unexpected error occurred: $e");
+      }
+    }
+  }
+
+  void _showErrorDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: <Widget>[
+          TextButton(child: const Text('Okay'), onPressed: () => Navigator.of(ctx).pop())
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,41 +120,54 @@ class _MedicationPageState extends State<MedicationPage> {
       body: Column(
         children: [
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Medicine Name",
-                        prefixIcon: Icon(Icons.medication),
-                        border: OutlineInputBorder(),
+            child: Form(
+              key: _formKey,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: nameController,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter the medicine name';
+                          }
+                          return null;
+                        },
+                        decoration: const InputDecoration(
+                          labelText: "Medicine Name",
+                          prefixIcon: Icon(Icons.medication),
+                          border: OutlineInputBorder(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 15),
-
-                    TextField(
-                      controller: dosageController,
-                      decoration: const InputDecoration(
-                        labelText: "Dosage",
-                        prefixIcon: Icon(Icons.line_weight),
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        controller: dosageController,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter the dosage';
+                          }
+                          return null;
+                        },
+                        decoration: const InputDecoration(
+                          labelText: "Dosage",
+                          prefixIcon: Icon(Icons.line_weight),
+                          border: OutlineInputBorder(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 15),
-
-                    TextField(
-                      controller: notesController,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: "Notes",
-                        prefixIcon: Icon(Icons.note_alt_outlined),
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        controller: notesController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: "Notes (Optional)",
+                          prefixIcon: Icon(Icons.note_alt_outlined),
+                          border: OutlineInputBorder(),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -99,7 +186,7 @@ class _MedicationPageState extends State<MedicationPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: () {},
+                onPressed: _saveMedication,
                 child: const Text(
                   "SAVE",
                   style: TextStyle(
@@ -116,5 +203,3 @@ class _MedicationPageState extends State<MedicationPage> {
     );
   }
 }
-
-
